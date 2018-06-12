@@ -3,18 +3,12 @@ package org.bcos.channel.handler;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.security.cert.X509Certificate;
 
+import org.bcos.plugins.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -83,6 +77,9 @@ public class ChannelConnections {
 		void onMessage(ChannelHandlerContext ctx, ByteBuf message);
 	}
 
+	private NotificationService notificationService;
+	private int notificationDelay = 30; // 分
+
 	private Callback callback;
 	private List<String> connectionsStr;
 	private String caCertPath = "classpath:ca.crt";
@@ -94,7 +91,25 @@ public class ChannelConnections {
 	private ThreadPoolTaskExecutor threadPool;
 	private long idleTimeout = (long)10000;
 	private long heartBeatDelay = (long)2000;
-	
+
+	Calendar last = Calendar.getInstance();
+
+	public NotificationService getNotificationService() {
+		return notificationService;
+	}
+
+	public void setNotificationService(NotificationService notificationService) {
+		this.notificationService = notificationService;
+	}
+
+	public int getNotificationDelay() {
+		return notificationDelay;
+	}
+
+	public void setNotificationDelay(int notificationDelay) {
+		this.notificationDelay = notificationDelay;
+	}
+
 	public Map<String, ChannelHandlerContext> networkConnections = new HashMap<String, ChannelHandlerContext>();
 	
 	public Callback getCallback() {
@@ -158,6 +173,12 @@ public class ChannelConnections {
 		}
 		
 		if(activeConnections.isEmpty()) {
+			if(notificationService != null) {
+				if(new Date().compareTo(last.getTime()) >= 0) {
+					last.add(Calendar.MINUTE, notificationDelay);
+					notificationService.sendMail("错误，无可用连接");
+				}
+			}
 			logger.error("无可用连接");
 			throw new Exception("错误，无可用连接");
 		}
@@ -352,13 +373,18 @@ public class ChannelConnections {
 						if(!running) {
 							return;
 						}
-						
+
 						//尝试重连
-						
 						reconnect();
 						Thread.sleep(heartBeatDelay);
 					}
 				} catch (InterruptedException e) {
+					if(notificationService != null) {
+						if(new Date().compareTo(last.getTime()) >= 0) {
+							last.add(Calendar.MINUTE, notificationDelay);
+							notificationService.sendMail(e);
+						}
+					}
 					logger.error("系统错误", e);
 				}
 			}

@@ -1,16 +1,12 @@
 package org.bcos.channel.client;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import org.bcos.plugins.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -377,6 +373,7 @@ public class Service {
                 public void run(Timeout timeout) throws Exception {
                     //处理超时逻辑
                     callbackInner.onTimeout();
+                    sendErrorNotification("transactionSuc timeout");
                     //timeout时清除map的数据,所以尽管后面有回包数据，也会找不到seq->callback的关系
                     seq2TransactionCallback.remove(request.getMessageID());
                 }
@@ -464,6 +461,7 @@ public class Service {
 					public void run(Timeout timeout) throws Exception {
 						//处理超时逻辑
 						_callback.onTimeout();
+						sendErrorNotification("处理Ethereum消息超时:{}");
 					}
 				}, request.getTimeout(), TimeUnit.MILLISECONDS));
 			}
@@ -549,6 +547,7 @@ public class Service {
 						public void run(Timeout timeout) throws Exception {
 							//处理超时逻辑
 							_callback.onTimeout();
+							sendErrorNotification("发送消息超时.");
 						}
 					}, request.getTimeout(), TimeUnit.MILLISECONDS));
 				}
@@ -616,6 +615,7 @@ public class Service {
 						public void run(Timeout timeout) throws Exception {
 							//处理超时逻辑
 							_callback.onTimeout();
+							sendErrorNotification("发送消息超时.");
 						}
 					}, request.getTimeout(), TimeUnit.MILLISECONDS));
 				}
@@ -934,6 +934,22 @@ public class Service {
 		this.threadPool = threadPool;
 	}
 
+	public NotificationService getNotificationService() {
+		return notificationService;
+	}
+
+	public void setNotificationService(NotificationService notificationService) {
+		this.notificationService = notificationService;
+	}
+
+	public Integer getNotificationDelay() {
+		return notificationDelay;
+	}
+
+	public void setNotificationDelay(Integer notificationDelay) {
+		this.notificationDelay = notificationDelay;
+	}
+
 	private Integer connectSeconds = 3;
 	private Integer connectSleepPerMillis = 1;
 	private String orgID;
@@ -948,4 +964,18 @@ public class Service {
 	private ThreadPoolTaskExecutor threadPool;
 	private List<String> topics = new ArrayList<String>();
 	private ObjectMapper objectMapper = new ObjectMapper();
+
+	private NotificationService notificationService;
+	private Integer notificationDelay = 1;
+	private Calendar last = Calendar.getInstance();
+
+	public void sendErrorNotification(String msg) {
+		if(notificationService != null) {
+			if(new Date().compareTo(last.getTime()) >= 0) {
+				last.add(Calendar.MINUTE, notificationDelay);
+				notificationService.sendMail(msg);
+			}
+		}
+	}
+
 }
