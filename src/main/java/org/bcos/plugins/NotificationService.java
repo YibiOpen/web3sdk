@@ -23,7 +23,7 @@ public class NotificationService {
     private String mailSenderAddress;
     private String mailSenderPwd;
     private String mailSenderName;
-    private List<String> receiverAddressList;
+    private String receiverAddresses; // address1,address2, ...
 
     public void sendMail(Exception e) {
         sendMail(writeStackTraceToString(e));
@@ -39,7 +39,7 @@ public class NotificationService {
         mail.setSendName(mailSenderName);
         mail.setSubject("bcos服务检测异常！");
         mail.setContent(content);
-        mail.setTo(receiverAddressList.toArray(new String[receiverAddressList.size()]));
+        mail.setTo(receiverAddresses.split(","));
         if (!EmailUtils.sslSend(mail)) {
             logger.error("bcos服务检测异常，邮件发送失败！");
             return;
@@ -86,12 +86,12 @@ public class NotificationService {
         this.mailSenderName = mailSenderName;
     }
 
-    public List<String> getReceiverAddressList() {
-        return receiverAddressList;
+    public String getReceiverAddresses() {
+        return receiverAddresses;
     }
 
-    public void setReceiverAddressList(List<String> receiverAddressList) {
-        this.receiverAddressList = receiverAddressList;
+    public void setReceiverAddresses(String receiverAddresses) {
+        this.receiverAddresses = receiverAddresses;
     }
 
     public static String writeStackTraceToString(Throwable t) {

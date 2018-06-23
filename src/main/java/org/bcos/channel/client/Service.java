@@ -373,7 +373,7 @@ public class Service {
                 public void run(Timeout timeout) throws Exception {
                     //处理超时逻辑
                     callbackInner.onTimeout();
-                    sendErrorNotification("transactionSuc timeout");
+                    sendErrorNotification("transactionSuc timeout: " + request.getContent());
                     //timeout时清除map的数据,所以尽管后面有回包数据，也会找不到seq->callback的关系
                     seq2TransactionCallback.remove(request.getMessageID());
                 }
@@ -461,7 +461,7 @@ public class Service {
 					public void run(Timeout timeout) throws Exception {
 						//处理超时逻辑
 						_callback.onTimeout();
-						sendErrorNotification("处理Ethereum消息超时:{}");
+						sendErrorNotification(String.format("处理Ethereum消息超时: {%s}", request.getContent()));
 					}
 				}, request.getTimeout(), TimeUnit.MILLISECONDS));
 			}
@@ -547,7 +547,7 @@ public class Service {
 						public void run(Timeout timeout) throws Exception {
 							//处理超时逻辑
 							_callback.onTimeout();
-							sendErrorNotification("发送消息超时.");
+							sendErrorNotification("发送消息超时: " + request.getContent());
 						}
 					}, request.getTimeout(), TimeUnit.MILLISECONDS));
 				}
@@ -615,7 +615,7 @@ public class Service {
 						public void run(Timeout timeout) throws Exception {
 							//处理超时逻辑
 							_callback.onTimeout();
-							sendErrorNotification("发送消息超时.");
+							sendErrorNotification("发送消息超时: " + request.getContent());
 						}
 					}, request.getTimeout(), TimeUnit.MILLISECONDS));
 				}
