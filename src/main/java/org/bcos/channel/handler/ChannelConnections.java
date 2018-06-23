@@ -393,7 +393,7 @@ public class ChannelConnections {
         for (Entry<String, ChannelHandlerContext> ctx : networkConnections.entrySet()) {
             if (ctx.getValue() == null || !ctx.getValue().channel().isActive()) {
                 if (notificationService != null) {
-                    if (new Date().compareTo(last.getTime()) >= 0) {
+                    if (new Date().compareTo(last.getTime()) >= notificationDelay) { // 设置延迟，避免启动时发送邮件
                         last.add(Calendar.MINUTE, notificationDelay);
                         notificationService.sendMail(String.format("节点连接断开，尝试连接到: %s", ctx.getKey()));
                     }
