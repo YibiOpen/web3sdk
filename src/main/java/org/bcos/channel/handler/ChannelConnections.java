@@ -90,6 +90,9 @@ public class ChannelConnections {
     private long heartBeatDelay = (long) 2000;
 
     Calendar last = Calendar.getInstance();
+    {
+        last.add(1, Calendar.MINUTE);
+    }
 
     public NotificationService getNotificationService() {
         return notificationService;
@@ -393,7 +396,7 @@ public class ChannelConnections {
         for (Entry<String, ChannelHandlerContext> ctx : networkConnections.entrySet()) {
             if (ctx.getValue() == null || !ctx.getValue().channel().isActive()) {
                 if (notificationService != null) {
-                    if (new Date().compareTo(last.getTime()) >= notificationDelay) { // 设置延迟，避免启动时发送邮件
+                    if (new Date().compareTo(last.getTime()) >= 0) { // 设置延迟，避免启动时发送邮件
                         last.add(Calendar.MINUTE, notificationDelay);
                         notificationService.sendMail(String.format("节点连接断开，尝试连接到: %s", ctx.getKey()));
                     }
